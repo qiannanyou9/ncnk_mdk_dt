@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="assets/libs/particles/css/style.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/login.css" />
+    <title>登陆</title>
+</head>
+<body>
+<div class="ant-modal-mask" style="display: none;"></div>
+<div id="c1"></div>
+<!-- particles.js container -->
+<div id="particles-js"></div>
+<div id="wrapper">
+    <div style="margin-top: 200px;">
+        <img class="logo" src="../assets/img/yun_nianchu_net.png" />
+        <span class="logo_font">Nianchu Cloud</span>
+    </div>
+    <nav class="switch_nav">
+        <a href="https://yun.nianchu.net" target="_blank" id="switch_signup" class="switch_btn">云控</a>
+        <a href="javascript:;" id="switch_login" class="switch_btn on">登陆</a>
+        <div class="switch_bottom" id="switch_bottom"></div>
+    </nav>
+    <div id="login">
+        <form method="post" action="">
+            <ul class="group_input">
+                <li>
+                    <input type="text" class="mobile required" id="mobile" placeholder="云控账号" />
+                </li>
+                <li style="margin-top: 10px;">
+                    <input type="password" class="psd required" id="psd" placeholder="云控密码" />
+                </li>
+            </ul>
+            <button type="submit" class="submit_btn" id="btnSubmit">登陆</button>
+        </form>
+    </div>
+    <div id="footer">
+        <span>更多插件请登录念初云控查看</span>
+        &copy;钱难有
+    </div>
+</div>
+<script src="layui/layui.all.js"></script>
+<script src="https://cdn.dingxiang-inc.com/ctu-group/captcha-ui/index.js"></script>
+<script src="assets/libs/jquery-1.12.4/jquery.min.js"></script>
+<script src="assets/libs/particles/particles.min.js"></script>
+<script src="assets/libs/particles/js/app.js"></script>
+<script>
+    $(function(){
+        var layer = layui.layer;
+        //为表单元素添加失去焦点事件
+        $("form :input").blur(function(){
+            var $parent = $(this).parent();
+            $parent.find(".msg").remove(); //删除以前的提醒元素（find()：查找匹配元素集中元素的所有匹配元素）
+            //验证手机号
+            if($(this).is("#mobile")){
+                var mobileVal = $.trim(this.value);
+                if(mobileVal == ""){
+                    var errorMsg = " 请输入云控账号！";
+                    $parent.append("<span class='msg onError'>" + errorMsg + "</span>");
+                } else{
+                    var okMsg=" 输入正确";
+                    $parent.append("<span class='msg onSuccess'>" + okMsg + "</span>");
+                }
+            }
+            //验证密码
+            if($(this).is("#psd")){
+                var psdVal = $.trim(this.value);
+                if(psdVal== ""){
+                    var errorMsg = "请输入云控密码！";
+                    $parent.append("<span class='msg onError'>" + errorMsg + "</span>");
+                }
+                else{
+                    var okMsg=" 输入正确";
+                    $parent.append("<span class='msg onSuccess'>" + okMsg + "</span>");
+                }
+            }
+        }).keyup(function(){
+            //triggerHandler 防止事件执行完后，浏览器自动为标签获得焦点
+            $(this).triggerHandler("blur");
+        }).focus(function(){
+            $(this).triggerHandler("blur");
+        });
+        //点击重置按钮时，通过trigger()来触发文本框的失去焦点事件
+        $("#btnSubmit").click(function(){
+            //trigger 事件执行完后，浏览器会为submit按钮获得焦点
+            $("form .required:input").trigger("blur");
+            var numError = $("form .onError").length;
+            if(numError){
+                return false;
+            }
+            $(".ant-modal-mask").show();
+            $("#c1").addClass("ant-modal-wrap");
+            // 顶象验证
+            var myCaptcha = _dx.Captcha(document.getElementById('c1'), {
+                appId: '1c880deab4e4eced2c04786567ee7046',
+                success: function (token) {
+                    var account = $("#mobile").val().trim();
+                    var pwd = $("#psd").val().trim();
+                    login(account,pwd,token);
+                }
+            })
+            return false;
+
+            return false;
+        });
+        // 检测登录
+        function login(account,pwd,token) {
+            $.ajax({
+                type: "post"
+                ,url: "https://cloudmanage.nianchu.net/api/5c9caf3111ea8"
+                ,data: {
+                    username: account
+                    ,password: pwd
+                    ,captchaToken: token
+                }
+                ,headers:{'version': 'v3.0'}
+                ,dataType: "json"
+                ,success: function (res) {
+                    $(".ant-modal-mask").hide();
+                    $("#c1").hide();
+                    if (res.code == "1"){
+                        localStorage.setItem("_ncnk_user", account);
+                        localStorage.setItem("_md_token", res.data.token);
+                        location.href = "transfer.html";
+                    }else{
+                        layer.msg(res.msg, {icon: 2});
+                    }
+                }
+                ,error: function () {
+                    layer.msg("登录失败，请联系客服");
+                }
+            })
+        }
+    })
+
+</script>
+</body>
+</html>

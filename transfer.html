@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <link rel="stylesheet" href="/layui/css/layui.css">
+    <title>转移数据</title>
+</head>
+<body>
+<div class="layui-container">
+    <div style="position: absolute;right: 10px;top: 10px;">
+        <span id="span_user"></span>
+        <button style="display: inline-block;" id="btn_logout" class="layui-btn layui-btn-xs layui-btn-danger" >退出</button>
+    </div>
+    <form class="layui-form" style="top: 45px;position: relative;">
+        <blockquote class="layui-elem-quote">待转移数据库</blockquote>
+        <div class="layui-form-item">
+            <label class="layui-form-label">地址</label>
+            <div class="layui-input-block">
+                <input type="text" name="baseurl" required  lay-verify="required" placeholder="请输入数据库地址" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">端口</label>
+            <div class="layui-input-block">
+                <input type="text" name="port" value="3306" required  lay-verify="required" placeholder="请输入端口" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">账号</label>
+            <div class="layui-input-block">
+                <input type="text" name="account" required  lay-verify="required" placeholder="请输入账号" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">密码</label>
+            <div class="layui-input-block">
+                <input type="text" name="pwd" required  lay-verify="required" placeholder="请输入密码" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <label class="layui-form-label">数据库名</label>
+            <div class="layui-input-block">
+                <input type="text" name="basename" required  lay-verify="required" placeholder="请输入数据库名" autocomplete="off" class="layui-input">
+            </div>
+        </div>
+        <blockquote class="layui-elem-quote">念初机器人</blockquote>
+        <div class="layui-form-item">
+            <label class="layui-form-label">机器人列表</label>
+            <div class="layui-input-block">
+                <div id="list_jiqiren" class="xm-select-demo"></div>
+            </div>
+        </div>
+        <div class="layui-form-item">
+            <div class="layui-input-block">
+                <button class="layui-btn" lay-submit lay-filter="*">开始转移</button>
+            </div>
+        </div>
+    </form>
+</div>
+</body>
+</html>
+<script src="/layui/layui.all.js"></script>
+<script src="xm-select/xm-select.js"></script>
+<script>
+    var layer = layui.layer
+        ,form = layui.form
+        ,$ = layui.$;
+    // 机器人列表
+    var list_jiqiren = [];
+    var demo1 = xmSelect.render({
+        el: '#list_jiqiren',
+        radio: true,
+        clickClose: true,
+        filterable: true,
+        paging: true,
+        pageSize: 30,
+        autoRow: true,
+        height: '500px',
+        data: list_jiqiren
+    });
+    $(function () {
+        var _token = localStorage.getItem("_md_token");
+        var _user = localStorage.getItem("_ncnk_user");
+
+        if (!_token || !_user){
+            location.href = "index.html";
+            return false;
+        }
+        $("#span_user").html(_user);
+        $.ajax({
+            type: "get"
+            ,url: "https://cloudmanage.nianchu.net/api/5ca310d13e8b3"
+            ,headers:{'version': 'v3.0', 'user-token': _token}
+            ,data: {
+                page: 1
+                ,size: 500
+            }
+            ,dataType: "json"
+            ,success: function (res) {
+                if (res.code == "1") {
+                    var count = res.data.count;
+                    if(count <= 0){
+                        layer.msg("当前账户下没有机器人", {icon:2});
+                        return false;
+                    }
+                    var list = res.data.list;
+                    for (var i in list){
+                        list_jiqiren[i] = {name: list[i].nickname, value: list[i].wx_id+"&&"+list[i].main_id};
+                    }
+                    xmSelect.render({
+                        el: '#list_jiqiren',
+                        radio: true,
+                        clickClose: true,
+                        filterable: true,
+                        paging: true,
+                        pageSize: 30,
+                        autoRow: true,
+                        height: '300px',
+                        data: list_jiqiren
+                    });
+                }
+            }
+            ,error: function () {
+                layer.msg("获取机器人列表失败");
+            }
+        })
+    })
+    // 监听提交
+    form.on('submit(*)', function(data){
+        var jiqiren = demo1.getValue("value");
+        if(jiqiren.length <= 0){
+            layer.msg("请选择机器人", {icon: 2});
+            return false;
+        }
+        layer.msg("开始转移,请耐心等待1~2分钟",{icon: 1});
+        $.ajax({
+            type: "post"
+            ,url: "LianZhu.php"
+            ,data: {data: JSON.stringify(data.field), jiqiren: jiqiren}
+            ,dataType: "json"
+            ,success: function (res) {
+                if (res.code == "-1"){
+                    layer.msg(res.msg, {icon: 2});
+                }
+            }
+            ,error: function () {
+                layer.msg("error！");
+            }
+        })
+        return false;
+    });
+
+    $("#btn_logout").on("click", function () {
+        localStorage.removeItem("_md_token");
+        location.href = "index.html";
+    })
+</script>
