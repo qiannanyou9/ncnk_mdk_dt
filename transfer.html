@@ -134,7 +134,7 @@
             layer.msg("请选择机器人", {icon: 2});
             return false;
         }
-        layer.msg("开始转移,请耐心等待1~2分钟",{icon: 1});
+        layer.msg("开始转移,请耐心等待10~20分钟",{icon: 1});
         $.ajax({
             type: "post"
             ,url: "LianZhu.php"
@@ -144,9 +144,6 @@
                 if (res.code == "-1"){
                     layer.msg(res.msg, {icon: 2});
                 }
-            }
-            ,error: function () {
-                layer.msg("error！");
             }
         })
         return false;

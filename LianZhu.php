@@ -1,4 +1,5 @@
 <?php
+header("Content-type:text/html;charset=utf-8");
 require_once "function_common.php";
 ignore_user_abort(true);// 函数设置与客户机断开是否会终止脚本的执行。
 ini_set('max_execution_time', 0);//数值 0 表示没有执行时间的限制，你的程序需要跑多久便跑多久
@@ -15,10 +16,11 @@ if(!$jiqiren){
     exit;
 }
 $data = json_decode($data, true);
+$opts_values = array(PDO::MYSQL_ATTR_INIT_COMMAND=>'SET NAMES utf8');
 // 连接脸猪数据库
 $dsn_lianzhu = "mysql:host={$data['baseurl']};dbname={$data['basename']};port={$data['port']}";
 try {
-    $LianZhuDb = new PDO($dsn_lianzhu, $data['account'], $data['pwd']);
+    $LianZhuDb = new PDO($dsn_lianzhu, $data['account'], $data['pwd'], $opts_values);
 }catch (PDOException $e){
     error_log("数据库连接失败：" . "\n" . $e->getMessage() . "\n", 3, './lianzhu_text.txt');
 }
@@ -31,10 +33,11 @@ if (!$ncnkdb){
     echo json_encode(["code"=>"-1", "msg"=>"念初数据信息获取失败"]);
     exit;
 }
+
 // 连接念初数据库
 $dsn_ncnk = "mysql:host={$ncnkdb['database_host']};dbname={$ncnkdb['database_name']};port={$ncnkdb['database_info']}";
 try {
-    $NianChuDb = new PDO($dsn_ncnk, $ncnkdb['database_username'], $ncnkdb['database_password']);
+    $NianChuDb = new PDO($dsn_ncnk, $ncnkdb['database_username'], $ncnkdb['database_password'], $opts_values);
 }catch (PDOException $e){
     error_log("念初数据库连接失败：" . "\n" . $e->getMessage() . "\n", 3, './lianzhu_text.txt');
 }
@@ -42,6 +45,7 @@ if (!$NianChuDb){
     echo json_encode(["code"=>"-1", "msg"=>"念初数据库连接失败"]);
     exit;
 }
+fastcgi_finish_request();
 //开始事务
 $NianChuDb->beginTransaction();
 // 清空会员表
@@ -110,7 +114,6 @@ EOF;
         error_log("Member_Error_Info" . "\n" . print_r($sql, 1) . "\n", 3, './lianzhu_text.txt');
         // 回滚数据
         $NianChuDb->rollBack();
-        var_dump($ret_result);die;
         echo json_encode(["code"=>"-1", "msg"=>"会员表写入失败"]);
         exit;
     }
